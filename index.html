@@ -930,9 +930,10 @@
  *        移除沿用自數字獵人的 v1–v58 紀錄與散落於樣式區的 v44/v45 inline 標號（版號自此只跟 67 獵人自身改動走）。
  * 67-v6：背景音樂改用 HydroGene「8-bit Epic Space Shooter Music」（OpenGameArt, CC0），清除舊重複 audio 標籤。
  * 67-v7：棋盤格預設改為隨機亮色填滿，錯誤閃爍與重置都回到原本底色；App icon 改走彩色格盤視覺。
+ * 67-v8：開始面板第一條規則改為依目前難度顯示「在 N 格中找出唯一的 67」。
  */
 
-const APP_VERSION = 'v7';  // 67 獵人自身版本；v7：棋盤預設隨機填色 + 彩色格盤 icon
+const APP_VERSION = 'v8';  // 67 獵人自身版本；v8：開始規則依目前難度顯示 N 格
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -1041,7 +1042,7 @@ const I18N = {
     adConsent: '管理廣告同意',
     version: '版本 {version}',
     refreshTitle: '點我強制刷新頁面（抓最新版）',
-    startRule1: '在 66 / 76 / 77 中找出唯一的 67。',
+    startRule1: '在{count}格中找出唯一的 67。',
     startRule2: '計時進行，越快找到越好。',
     startRule3: '有三次錯誤機會，錯 3 次結束。',
     difficultyLabel: '選擇難度（格子越多、67 越難找）',
@@ -1146,7 +1147,7 @@ const I18N = {
     adConsent: 'Manage ad consent',
     version: 'Version {version}',
     refreshTitle: 'Force refresh and load the latest version',
-    startRule1: 'Find the only 67 among 66 / 76 / 77.',
+    startRule1: 'Find the only 67 in {count} cells.',
     startRule2: 'You are timed — be quick!',
     startRule3: 'Three mistakes and the game is over.',
     difficultyLabel: 'Choose difficulty (more cells = harder to find 67)',
@@ -2848,7 +2849,7 @@ function showStartDialog() {
     '<section class="start-info">' +
     '<h2>' + iconSvg('target') + t('title') + '</h2>' +
     '<div class="intro-card">' +
-    '<div class="rule"><b>' + N + '</b><span>' + t('startRule1') + '</span></div>' +
+    '<div class="rule"><b>🎯</b><span>' + t('startRule1', { count: N }) + '</span></div>' +
     '<div class="rule"><b>⏱</b><span>' + t('startRule2') + '</span></div>' +
     '<div class="rule"><b>3</b><span>' + t('startRule3') + '</span></div>' +
     '</div>' +
