@@ -9,6 +9,7 @@
 - 點到 66/76/77 → 扣 1 條命，錯 3 次遊戲結束（不計分）。
 - 找到 67 → 過關，留名進排行榜（依用時由小到大排序）。
 - **四種難度＝格子數**：新手 25 格 / 簡單 50 格 / 普通 75 格 / 困難 100 格（格子越多越難找）。
+- **v7（2026-06-15）**：遊戲區塊預設就用隨機亮色填滿，不再是白底；點錯短暫閃紅後回到原本底色，點中 67 以高彩度完成色標示。App icon 同步重設計為彩色格盤 + 67 徽章，移除舊放大鏡/誘餌數字主視覺。
 - 67 可能藏在很小的格子裡，**兩指捏合放大 / 滑鼠滾輪縮放**找；切到背景自動暫停。
 - 中英雙語、背景音樂（OpenGameArt CC0）、音效、語音報數（含 20% 機率「six～seven～」67 迷因彩蛋）。
 
@@ -32,12 +33,13 @@
 
 ## 檔案
 - `index.html`：遊戲本體（單檔）。
-- `icon.svg` / `icon-180.png` / `app-icons/hunter67-*.png`：App icon（codex 產出 SVG，cairosvg 轉 PNG；`hunter67-appstore-1024.png` 為不透明 RGB 供 App Store）。
+- `icon.svg` / `icon-180.png` / `app-icons/hunter67-*.png`：App icon（彩色填格盤 + 67 徽章，cairosvg 轉 PNG；`hunter67-appstore-1024.png` 為不透明 RGB 供 App Store）。
 - `backend/Code.gs` + `backend/DEPLOY.md`：雲端排行榜後端與部署說明。
 - `bgm.mp3`：背景音樂（HydroGene「8-bit Epic Space Shooter Music」，OpenGameArt，CC0）。
 
 ## 驗證（2026-06-15）
 - 抽出 inline script `node --check` 通過。
+- v7 線上部署：公開 repo commit `a127615`，Pages `https://jikker.github.io/67-hunter/index.html?v7b` 已驗回 `APP_VERSION = 'v7'`；`icon.svg?v7b` 與 `app-icons/hunter67-512.png?v7b` HTTP 200 且為新尺寸。
 - 前後端 HMAC 金鑰一致（LB_KC XOR 90 == 後端 SECRET，含中文名向量）。
 - `makeBoardNums` 8000 局：恰好 1 個 67、其餘皆 66/76/77（四難度）。
 - 真實 Chrome headless E2E：開始畫面渲染（emerald 主題、四難度標籤、版本 67-v1）；開局＝1×67＋74 誘餌、點誘餌扣命、點 67 過關出 win 面板；難度切新手＝25 格 1×67；連點 3 誘餌出「遊戲結束」面板；找到 67 存名「煙霧」寫入本機排行榜成功。
