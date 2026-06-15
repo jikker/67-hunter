@@ -960,9 +960,10 @@
  * 67-v12：命中 67 後不再跳成功 toast 或語音播報，改用 HUD 剩餘數的低干擾脈衝提示。
  * 67-v13：命中 67 後完全不顯示提示（不 toast、不 HUD 脈衝、不播報），只有點錯才顯示錯誤提示。
  * 67-v14：手機 HUD 改為不溢出的緊湊配置；命中 67 一律用英文播報「six seven」。
+ * 67-v15：命中語音改為非同步節流，不再每次連點都同步 cancel/speak，避免快速連點時主執行緒短暫卡住。
  */
 
-const APP_VERSION = 'v14';  // 67 獵人自身版本；v14：手機 HUD 不溢出，命中 67 播 six seven
+const APP_VERSION = 'v15';  // 67 獵人自身版本；v15：命中語音非同步節流，修正快速連點卡頓
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -2334,6 +2335,8 @@ const Speech = {
   enabled: true,
   ok: false,
   canSpeak: 'speechSynthesis' in window,
+  pendingHit: false,
+  lastHitAt: 0,
   init() {
     for (const id of ['speakBtn', 'hudSpeakBtn']) {
       const b = document.getElementById(id);
@@ -2346,17 +2349,25 @@ const Speech = {
   sayRemaining() {},
   sayHit67() {
     if (!this.canSpeak) return;
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance('six seven');
-      u.lang = 'en-US';
-      const en = (window.speechSynthesis.getVoices() || []).find(v => /^en/i.test(v.lang));
-      if (en) u.voice = en;
-      u.rate = 0.72;
-      u.pitch = 1.0;
-      u.volume = 1.0;
-      window.speechSynthesis.speak(u);
-    } catch (e) {}
+    const now = performance.now();
+    if (this.pendingHit || window.speechSynthesis.speaking || now - this.lastHitAt < 650) return;
+    this.pendingHit = true;
+    this.lastHitAt = now;
+    setTimeout(() => {
+      this.pendingHit = false;
+      if (!Game.active || Game.paused || Game.ended) return;
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return;
+      try {
+        const u = new SpeechSynthesisUtterance('six seven');
+        u.lang = 'en-US';
+        const en = (window.speechSynthesis.getVoices() || []).find(v => /^en/i.test(v.lang));
+        if (en) u.voice = en;
+        u.rate = 0.72;
+        u.pitch = 1.0;
+        u.volume = 1.0;
+        window.speechSynthesis.speak(u);
+      } catch (e) {}
+    }, 0);
   },
   flashProgress() {},
   toggle() {},
