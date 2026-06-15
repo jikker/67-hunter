@@ -136,6 +136,7 @@
     top: 0;
     z-index: 5;
     min-height: 58px;
+    overflow: hidden;
   }
   .hud-main {
     display: grid;
@@ -151,6 +152,7 @@
     align-items: center;
     gap: 6px;
     white-space: nowrap;
+    min-width: 0;
   }
   .hud .target-num {
     font-size: 38px;
@@ -445,6 +447,7 @@
   .cta button:hover { background: #34d399; }
   .cta .cta-hint { font-size: 12.5px; color: #f3f4f6; text-shadow: 0 1px 4px #000; }
   body.gaming .cta { display: none; }
+  body.gaming > .langbtn { display: none; }
   /* ---- 暫停模式：時間停止、棋盤霧化隱藏（HUD/計時仍清晰） ---- */
   .pause-screen {
     position: fixed; inset: 0; z-index: 4;   /* 蓋住棋盤(z:auto)、在 HUD(z:5)/topbar(z:10) 之下 */
@@ -525,30 +528,40 @@
       font-size: 18px;
     }
     .hud {
-      padding: 7px 8px;
+      padding: 7px calc(8px + env(safe-area-inset-right)) 7px calc(8px + env(safe-area-inset-left));
       gap: 5px;
       min-height: 52px;
+      grid-template-columns: minmax(0, 1fr) auto;
     }
     .hud-main {
-      grid-template-columns: 44px 52px max-content 38px;
+      grid-template-columns: auto auto auto minmax(0, 1fr);
       justify-content: start;
       gap: 5px;
+      overflow: hidden;
     }
     .hud .target-label {
       display: none;
     }
     .hud .target-num {
-      width: 44px;
+      width: auto;
+      min-width: 42px;
       font-size: 34px;
     }
     .hud .stat {
       font-size: 14px;
+      min-width: 0;
     }
     .hud .lives {
       font-size: 16px;
     }
+    #progDisp {
+      text-align: left;
+      overflow: hidden;
+      text-overflow: clip;
+    }
     .hud-actions {
       gap: 5px;
+      min-width: max-content;
     }
     .hud button {
       min-height: 32px;
@@ -556,11 +569,16 @@
       font-size: 13px;
     }
     #pauseBtn {
-      width: 42px;
+      width: 38px;
       padding-inline: 0;
     }
     #quitBtn {
-      min-width: 66px;
+      width: 38px;
+      min-width: 38px;
+      padding-inline: 0;
+    }
+    #quitBtn .btn-label {
+      display: none;
     }
     .overlay .panel {
       width: calc(100vw - 64px);
@@ -597,11 +615,11 @@
       max-width: 24px;
     }
     .hud-main {
-      grid-template-columns: 40px 50px max-content 34px;
+      grid-template-columns: auto auto auto minmax(0, 1fr);
       gap: 4px;
     }
     .hud .target-num {
-      width: 40px;
+      min-width: 38px;
       font-size: 31px;
     }
     #quitBtn .btn-label {
@@ -941,9 +959,10 @@
  * 67-v11：移除 67「six seven」語音彩蛋，報數改為播報目前還剩幾個 67。
  * 67-v12：命中 67 後不再跳成功 toast 或語音播報，改用 HUD 剩餘數的低干擾脈衝提示。
  * 67-v13：命中 67 後完全不顯示提示（不 toast、不 HUD 脈衝、不播報），只有點錯才顯示錯誤提示。
+ * 67-v14：手機 HUD 改為不溢出的緊湊配置；命中 67 一律用英文播報「six seven」。
  */
 
-const APP_VERSION = 'v13';  // 67 獵人自身版本；v13：命中後不顯示提示，只有點錯才 toast
+const APP_VERSION = 'v14';  // 67 獵人自身版本；v14：手機 HUD 不溢出，命中 67 播 six seven
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -2309,11 +2328,12 @@ const Sound = {
   }
 };
 
-// ================= 命中提示（關閉） =================
-// v13：命中 67 後保持安靜，只更新格子狀態與剩餘數；錯點才顯示 toast。
+// ================= 命中 67 英文語音 =================
+// v14：每次命中 67 都固定念英文 "six seven"，不再報剩餘數。
 const Speech = {
-  enabled: false,
+  enabled: true,
   ok: false,
+  canSpeak: 'speechSynthesis' in window,
   init() {
     for (const id of ['speakBtn', 'hudSpeakBtn']) {
       const b = document.getElementById(id);
@@ -2324,6 +2344,20 @@ const Speech = {
   pickVoice() {},
   sayText() {},
   sayRemaining() {},
+  sayHit67() {
+    if (!this.canSpeak) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance('six seven');
+      u.lang = 'en-US';
+      const en = (window.speechSynthesis.getVoices() || []).find(v => /^en/i.test(v.lang));
+      if (en) u.voice = en;
+      u.rate = 0.72;
+      u.pitch = 1.0;
+      u.volume = 1.0;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  },
   flashProgress() {},
   toggle() {},
   refresh() {
@@ -2522,7 +2556,7 @@ const Game = {
       markFoundTarget(r);
       Sound.correct();
       this.updateHud();
-      Speech.sayRemaining(this.targetsRemaining(), this.targetTotal);
+      Speech.sayHit67();
       hideToast();
       if (this.found >= this.targetTotal) {
         this.win();
