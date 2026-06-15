@@ -167,6 +167,16 @@
     overflow: hidden;
     text-overflow: clip;
   }
+  .hud .stat.progress-pulse {
+    color: #fef08a;
+    text-shadow: 0 0 12px rgba(250, 204, 21, .65);
+    animation: progressPulse .46s ease-out;
+  }
+  @keyframes progressPulse {
+    0% { transform: scale(1); }
+    42% { transform: scale(1.16); }
+    100% { transform: scale(1); }
+  }
   .hud .lives { color: #f87171; letter-spacing: 1px; font-size: 17px; overflow: visible; }
   .hud button {
     font-size: 13px; padding: 5px 12px; border: none; border-radius: 6px;
@@ -342,11 +352,11 @@
     cursor: pointer;
   }
   .panel .media-state button:active { transform: none; box-shadow: none; }
-  /* 音效／音樂／報數開關：打開橘色、關閉白色（開始畫面設定列） */
+  /* 音效／音樂／進度提示開關：打開橘色、關閉白色（開始畫面設定列） */
   .panel .media-state button.ms-sound.on,
   .panel .media-state button.ms-music.on,
   .panel .media-state button.ms-speak.on { background: #10b981; color: #1f2937; border-color: #10b981; }
-  /* 音效／音樂／報數開關（頂列 + 遊戲中 HUD）：打開橘色、關閉白色，與開始畫面一致 */
+  /* 音效／音樂／進度提示開關（頂列 + 遊戲中 HUD）：打開橘色、關閉白色，與開始畫面一致 */
   #soundBtn.on, #hudSoundBtn.on,
   #musicBtn.on, #hudMusicBtn.on,
   #speakBtn.on, #hudSpeakBtn.on { background: #10b981; color: #1f2937; opacity: 1; }
@@ -402,7 +412,7 @@
     filter: drop-shadow(0 0 2px rgba(225,29,72,.9));
   }
   [hidden] { display: none !important; }
-  /* ---- 棋盤（A4 紙）：手機滿版 ---- */
+  /* ---- 螢幕中的棋盤：手機滿版 ---- */
   .sheet {
     background: #fff;
     margin: 8px 0 100px;
@@ -612,7 +622,7 @@
       padding-inline: 0;
     }
   }
-  /* 橫屏棋盤：小高度裝置與 PC 橫向視窗都把 A4 棋盤旋轉成橫向，避免直式紙被壓到太窄。 */
+  /* 橫屏棋盤：小高度裝置與 PC 橫向視窗都把 螢幕棋盤旋轉成橫向，避免直式紙被壓到太窄。 */
   body.gaming.landscape-play {
     height: 100dvh;
     min-height: 100dvh;
@@ -871,7 +881,7 @@
   <span class="logo"><svg class="ui-icon"><use href="#icon-target"></use></svg><span class="logo-text">數字獵人</span></span>
   <button class="iconbtn" id="musicBtn" title="背景音樂開關" aria-label="背景音樂開關"><svg class="ui-icon"><use href="#icon-music"></use></svg></button>
   <button class="iconbtn" id="soundBtn" title="音效開關" aria-label="音效開關"><svg class="ui-icon"><use href="#icon-sound"></use></svg></button>
-  <button class="iconbtn" id="speakBtn" title="報數開關" aria-label="報數開關"><svg class="ui-icon"><use href="#icon-speak"></use></svg></button>
+  <button class="iconbtn" id="speakBtn" title="進度提示開關" aria-label="進度提示開關"><svg class="ui-icon"><use href="#icon-target"></use></svg></button>
   <button class="iconbtn" id="lbBtn" title="排行榜" aria-label="排行榜"><svg class="ui-icon"><use href="#icon-trophy"></use></svg></button>
   <button class="iconbtn" id="menuBtn" title="玩法說明" aria-label="玩法說明"><svg class="ui-icon"><use href="#icon-info"></use></svg></button>
 </div>
@@ -892,7 +902,7 @@
   <div class="hud-actions">
     <button class="mini" id="hudMusicBtn" title="背景音樂開關" aria-label="背景音樂開關"><svg class="ui-icon"><use href="#icon-music"></use></svg></button>
     <button class="mini" id="hudSoundBtn" title="音效開關" aria-label="音效開關"><svg class="ui-icon"><use href="#icon-sound"></use></svg></button>
-    <button class="mini" id="hudSpeakBtn" title="報數開關" aria-label="報數開關"><svg class="ui-icon"><use href="#icon-speak"></use></svg></button>
+    <button class="mini" id="hudSpeakBtn" title="進度提示開關" aria-label="進度提示開關"><svg class="ui-icon"><use href="#icon-target"></use></svg></button>
     <button class="mini" id="hudLbBtn" title="排行榜" aria-label="排行榜"><svg class="ui-icon"><use href="#icon-trophy"></use></svg></button>
     <button class="mini" id="hudMenuBtn" title="玩法說明" aria-label="玩法說明"><svg class="ui-icon"><use href="#icon-info"></use></svg></button>
     <button class="mini" id="hudLangBtn" title="切換語言" aria-label="切換語言">🇹🇼</button>
@@ -925,7 +935,7 @@
 'use strict';
 /*
  * 67 獵人（67 Hunter）— 由「數字獵人」(T-152) 改版的找 67 反應遊戲。
- * 棋盤（A4 隨機 Voronoi 格）全是誘餌 66 / 76 / 77，混入數個「67」，比誰最快全部找完；計時到 0.01 秒。
+ * 棋盤（螢幕隨機 Voronoi 格）全是誘餌 66 / 76 / 77，混入數個「67」，比誰最快全部找完；計時到 0.01 秒。
  * 版面生成沿用數字獵人：圓形格 + Voronoi 切割、群聚+均勻種子混合、細長格數字沿長軸旋轉、viewBox 以 mm 為單位（列印即 A4）。
  *
  * === 67 獵人自身版本史（與 T-152 數字獵人各自獨立計算，不繼承其 vNN）===
@@ -939,9 +949,10 @@
  * 67-v8：開始面板第一條規則改為依目前難度顯示「在 N 格中找出 67」。
  * 67-v10：每局改為多個 67 目標（25/50/75/100 格＝3/6/9/12 個），HUD 顯示剩餘數，找到的 67 以高對比黃底紅框保留。
  * 67-v11：移除 67「six seven」語音彩蛋，報數改為播報目前還剩幾個 67。
+ * 67-v12：命中 67 後不再跳成功 toast 或語音播報，改用 HUD 剩餘數的低干擾脈衝提示。
  */
 
-const APP_VERSION = 'v11';  // 67 獵人自身版本；v11：命中後語音播報剩餘 67 數量
+const APP_VERSION = 'v12';  // 67 獵人自身版本；v12：命中後以 HUD 脈衝取代成功 toast / 語音報數
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -959,7 +970,7 @@ const I18N = {
     title: '67 獵人',
     musicToggle: '背景音樂開關',
     soundToggle: '音效開關',
-    speakToggle: '報數開關',
+    speakToggle: '進度提示開關',
     leaderboard: '排行榜',
     more: '更多功能',
     redraw: '重劃一張新棋盤',
@@ -981,14 +992,14 @@ const I18N = {
     musicOff: '背景音樂關閉',
     soundOn: '音效開啟',
     soundOff: '音效關閉',
-    speakOn: '報數開啟',
-    speakOnDesc: '報數開啟（播報還剩幾個 67）',
-    speakOff: '報數關閉',
+    speakOn: '進度提示開啟',
+    speakOnDesc: '進度提示開啟（命中後閃一下剩餘數）',
+    speakOff: '進度提示關閉',
     on: '開',
     off: '關',
     music: '音樂',
     sound: '音效',
-    speak: '報數',
+    speak: '提示',
     modeBeginner: '新手模式',
     modeEasy: '簡單模式',
     modeNormal: '普通模式',
@@ -1000,8 +1011,8 @@ const I18N = {
     wrongTap: '❌ 點到的是 {wrong}，不是 67（再錯 {left} 次就結束）',
     foundTarget: '✅ 找到 {found}/{total} 個 67，還剩 {remain} 個',
     remainingTargets: '剩 {remain}/{total}',
-    speechRemaining: '還有 {remain} 個',
-    speechAllFound: '全部找到了',
+    speechRemaining: '剩 {remain}/{total}',
+    speechAllFound: '完成',
     foundStatsNone: '📊 每題耗時：尚未找到任何數字。',
     foundStats: '📊 每題耗時：最快 <b>{fastSec}</b>（數字 {fastNum}），最慢 <b>{slowSec}</b>（數字 {slowNum}），平均 <b>{avgSec}</b>。',
     secondsShort: '{value} 秒',
@@ -1068,7 +1079,7 @@ const I18N = {
     title: '67 Hunter',
     musicToggle: 'Background music toggle',
     soundToggle: 'Sound effects toggle',
-    speakToggle: 'Number callout toggle',
+    speakToggle: 'Progress cue toggle',
     leaderboard: 'Leaderboard',
     more: 'More',
     redraw: 'Draw a new board',
@@ -1090,14 +1101,14 @@ const I18N = {
     musicOff: 'Background music off',
     soundOn: 'Sound effects on',
     soundOff: 'Sound effects off',
-    speakOn: 'Number callout on',
-    speakOnDesc: 'Number callout on',
-    speakOff: 'Number callout off',
+    speakOn: 'Progress cue on',
+    speakOnDesc: 'Progress cue on',
+    speakOff: 'Progress cue off',
     on: 'On',
     off: 'Off',
     music: 'Music',
     sound: 'Sound',
-    speak: 'Voice',
+    speak: 'Cue',
     modeBeginner: 'Beginner',
     modeEasy: 'Easy',
     modeNormal: 'Normal',
@@ -2307,53 +2318,32 @@ const Sound = {
   }
 };
 
-// ================= 語音報數（播報剩餘 67 數量） =================
-// 用瀏覽器內建 Web Speech API（SpeechSynthesis）播報還剩幾個 67，可一鍵關閉。
+// ================= 進度提示（低干擾 HUD 脈衝） =================
+// 成功命中時只讓 HUD 的剩餘數短暫脈衝，不跳 toast、不朗讀，避免遮住遊戲區域。
 const Speech = {
-  enabled: localStorage.getItem('hunter67_speak') !== 'off',
-  ok: 'speechSynthesis' in window,
-  zhVoice: null,
+  enabled: localStorage.getItem('hunter67_progress_cue') !== 'off',
+  ok: true,
   init() {
-    if (!this.ok) {                               // 瀏覽器不支援 → 隱藏按鈕、不影響遊戲
-      for (const id of ['speakBtn', 'hudSpeakBtn']) {
-        const b = document.getElementById(id);
-        if (b) b.hidden = true;
-      }
-      return;
-    }
-    this.pickVoice();
-    // 語音清單可能非同步載入，voiceschanged 後再挑一次中文語音
-    window.speechSynthesis.addEventListener('voiceschanged', () => this.pickVoice());
     this.refresh();
   },
-  pickVoice() {
-    const voices = window.speechSynthesis.getVoices() || [];
-    this.zhVoice = voices.find(v => /^zh/i.test(v.lang)) || null;
-  },
-  sayText(text) {
-    if (!this.ok || !this.enabled) return;
-    try {
-      window.speechSynthesis.cancel();            // 蓋掉上一題殘留，避免排隊堆疊
-      const u = new SpeechSynthesisUtterance(String(text));
-      u.lang = currentLang === 'zh' ? 'zh-TW' : 'en-US';
-      if (currentLang === 'zh' && this.zhVoice) u.voice = this.zhVoice;
-      u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
-      window.speechSynthesis.speak(u);
-    } catch (e) {}
-  },
+  pickVoice() {},
+  sayText() {},
   sayRemaining(remain, total) {
-    const count = Math.max(0, Number(remain) || 0);
-    const text = count === 0
-      ? t('speechAllFound')
-      : t('speechRemaining', { remain: count, total });
-    this.sayText(text);
+    this.flashProgress();
+  },
+  flashProgress() {
+    if (!this.enabled) return;
+    const prog = document.getElementById('progDisp');
+    if (!prog) return;
+    prog.classList.remove('progress-pulse');
+    void prog.offsetWidth;
+    prog.classList.add('progress-pulse');
   },
   toggle() {
     this.enabled = !this.enabled;
-    localStorage.setItem('hunter67_speak', this.enabled ? 'on' : 'off');
-    if (!this.enabled && this.ok) window.speechSynthesis.cancel();
+    localStorage.setItem('hunter67_progress_cue', this.enabled ? 'on' : 'off');
     this.refresh();
-    if (this.enabled && Game.active && Game.target) this.sayRemaining(Game.targetsRemaining(), Game.targetTotal);
+    if (this.enabled && Game.active && Game.target) this.flashProgress();
   },
   refresh() {
     for (const id of ['speakBtn', 'hudSpeakBtn']) {
@@ -2500,7 +2490,6 @@ const Game = {
     Zoom.reset();
     for (const r of regions) resetRegionStyle(r);
     hideToast(); hideOverlay();
-    if (Speech.ok) { try { window.speechSynthesis.cancel(); } catch (e) {} }
   },
   quit() {
     this.active = false;
@@ -2553,15 +2542,9 @@ const Game = {
       Sound.correct();
       this.updateHud();
       Speech.sayRemaining(this.targetsRemaining(), this.targetTotal);
+      hideToast();
       if (this.found >= this.targetTotal) {
-        hideToast();
         this.win();
-      } else {
-        showToast(t('foundTarget', {
-          found: this.found,
-          total: this.targetTotal,
-          remain: this.targetsRemaining()
-        }), 'ok');
       }
     } else {                                         // 點到 66 / 76 / 77 → 扣命
       this.errors++;
@@ -2809,10 +2792,10 @@ function mediaStateHtml() {
   return '<div class="media-state" id="mediaState">' +
     '<button type="button" class="ms-music' + (Music.enabled ? ' on' : '') + '" onclick="togglePanelMedia(&quot;music&quot;)">' + iconSvg('music') + ' ' + t('music') + '：' + (Music.enabled ? t('on') : t('off')) + '</button>' +
     '<button type="button" class="ms-sound' + (Sound.enabled ? ' on' : '') + '" onclick="togglePanelMedia(&quot;sound&quot;)">' + iconSvg(Sound.enabled ? 'sound' : 'mute') + ' ' + t('sound') + '：' + (Sound.enabled ? t('on') : t('off')) + '</button>' +
-    (Speech.ok ? '<button type="button" class="ms-speak' + (Speech.enabled ? ' on' : '') + '" onclick="togglePanelMedia(&quot;speak&quot;)">' + iconSvg('speak') + ' ' + t('speak') + '：' + (Speech.enabled ? t('on') : t('off')) + '</button>' : '') +
+    (Speech.ok ? '<button type="button" class="ms-speak' + (Speech.enabled ? ' on' : '') + '" onclick="togglePanelMedia(&quot;speak&quot;)">' + iconSvg('target') + ' ' + t('speak') + '：' + (Speech.enabled ? t('on') : t('off')) + '</button>' : '') +
     '</div>';
 }
-// 面板上的音樂/音效/報數設定列：直接點擊切換，並原地刷新顯示（不重畫整個面板）。
+// 面板上的音樂/音效/進度提示設定列：直接點擊切換，並原地刷新顯示（不重畫整個面板）。
 function togglePanelMedia(kind) {
   if (kind === 'music') Music.toggle();
   else if (kind === 'sound') Sound.toggle();
