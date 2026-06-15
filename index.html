@@ -938,9 +938,10 @@
  * 67-v7：棋盤格預設改為隨機亮色填滿，錯誤閃爍與重置都回到原本底色；App icon 改走彩色格盤視覺。
  * 67-v8：開始面板第一條規則改為依目前難度顯示「在 N 格中找出 67」。
  * 67-v10：每局改為多個 67 目標（25/50/75/100 格＝3/6/9/12 個），HUD 顯示剩餘數，找到的 67 以高對比黃底紅框保留。
+ * 67-v11：移除 67「six seven」語音彩蛋，報數改為播報目前還剩幾個 67。
  */
 
-const APP_VERSION = 'v10';  // 67 獵人自身版本；v10：多個 67 目標與剩餘數提示
+const APP_VERSION = 'v11';  // 67 獵人自身版本；v11：命中後語音播報剩餘 67 數量
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -981,7 +982,7 @@ const I18N = {
     soundOn: '音效開啟',
     soundOff: '音效關閉',
     speakOn: '報數開啟',
-    speakOnDesc: '報數開啟（念出目標數字）',
+    speakOnDesc: '報數開啟（播報還剩幾個 67）',
     speakOff: '報數關閉',
     on: '開',
     off: '關',
@@ -999,6 +1000,8 @@ const I18N = {
     wrongTap: '❌ 點到的是 {wrong}，不是 67（再錯 {left} 次就結束）',
     foundTarget: '✅ 找到 {found}/{total} 個 67，還剩 {remain} 個',
     remainingTargets: '剩 {remain}/{total}',
+    speechRemaining: '還有 {remain} 個',
+    speechAllFound: '全部找到了',
     foundStatsNone: '📊 每題耗時：尚未找到任何數字。',
     foundStats: '📊 每題耗時：最快 <b>{fastSec}</b>（數字 {fastNum}），最慢 <b>{slowSec}</b>（數字 {slowNum}），平均 <b>{avgSec}</b>。',
     secondsShort: '{value} 秒',
@@ -1106,6 +1109,8 @@ const I18N = {
     wrongTap: '❌ You tapped {wrong}, not 67. Game over after {left} more mistake(s).',
     foundTarget: '✅ Found {found}/{total} 67s. {remain} left.',
     remainingTargets: '{remain}/{total} left',
+    speechRemaining: '{remain} left',
+    speechAllFound: 'All found',
     foundStatsNone: '📊 Per-number time: no numbers found yet.',
     foundStats: '📊 Per-number time: fastest <b>{fastSec}</b> (number {fastNum}), slowest <b>{slowSec}</b> (number {slowNum}), average <b>{avgSec}</b>.',
     secondsShort: '{value}s',
@@ -2302,15 +2307,12 @@ const Sound = {
   }
 };
 
-// ================= 中文語音報數（新目標數字出現時念出來） =================
-// 用瀏覽器內建 Web Speech API（SpeechSynthesis），念出每一題的目標數字，可一鍵關閉。
+// ================= 語音報數（播報剩餘 67 數量） =================
+// 用瀏覽器內建 Web Speech API（SpeechSynthesis）播報還剩幾個 67，可一鍵關閉。
 const Speech = {
   enabled: localStorage.getItem('hunter67_speak') !== 'off',
   ok: 'speechSynthesis' in window,
   zhVoice: null,
-  meme67Playing: false,   // 67 迷因正在念（念完才報下一個數字）
-  pendingNum: null,       // 迷因播放期間被擋下、待迷因結束再念的數字
-  ctrlHeld: false,        // 電腦版彩蛋：按住 Ctrl 期間每一題都念 67 迷因（放開即恢復）
   init() {
     if (!this.ok) {                               // 瀏覽器不支援 → 隱藏按鈕、不影響遊戲
       for (const id of ['speakBtn', 'hudSpeakBtn']) {
@@ -2328,55 +2330,30 @@ const Speech = {
     const voices = window.speechSynthesis.getVoices() || [];
     this.zhVoice = voices.find(v => /^zh/i.test(v.lang)) || null;
   },
-  say(num) {
-    if (!this.ok) return;
-    // 電腦版彩蛋：按住 Ctrl 期間，任何數字都改念 67 迷因「six～seven～」
-    if (this.ctrlHeld) {
-      if (this.meme67Playing) { this.pendingNum = 67; return; }   // 正在念就排隊，避免被 cancel 截斷
-      this.say67(); return;
-    }
-    // 67 彩蛋：只有 20% 機率觸發「six～seven～」迷因，其餘 80% 照常念「六十七」（驚喜感、不每次都來）
-    if (Number(num) === 67 && Math.random() < 0.2) { this.say67(); return; }
-    if (!this.enabled) return;
-    // 67 迷因還在念 → 先記住這個數字，等迷因 onend 再念，避免被 cancel 掉
-    if (this.meme67Playing) { this.pendingNum = num; return; }
+  sayText(text) {
+    if (!this.ok || !this.enabled) return;
     try {
       window.speechSynthesis.cancel();            // 蓋掉上一題殘留，避免排隊堆疊
-      const u = new SpeechSynthesisUtterance(String(num));
+      const u = new SpeechSynthesisUtterance(String(text));
       u.lang = currentLang === 'zh' ? 'zh-TW' : 'en-US';
       if (currentLang === 'zh' && this.zhVoice) u.voice = this.zhVoice;
       u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
       window.speechSynthesis.speak(u);
     } catch (e) {}
   },
-  // 67 彩蛋：不念「六十七」，改英文長念「six～seven～」。受「音效」開關控制，音效關＝靜音。
-  say67() {
-    if (!this.enabled) return;                    // 報數關閉時與一般數字一致，不報
-    if (!Sound.enabled) { this.meme67Playing = false; return; }  // 音效關 → 靜音（用戶指定）
-    try {
-      window.speechSynthesis.cancel();
-      this.meme67Playing = true;
-      this.pendingNum = null;
-      const u = new SpeechSynthesisUtterance('six   seven');     // 慢速念出 6～7～
-      u.lang = 'en-US';
-      const en = (window.speechSynthesis.getVoices() || []).find(v => /^en/i.test(v.lang));
-      if (en) u.voice = en;
-      u.rate = 0.5; u.pitch = 1.0; u.volume = 1.0;               // rate 0.5 拉長成「6～7～」
-      u.onend = u.onerror = () => {
-        this.meme67Playing = false;
-        if (this.pendingNum != null) {                          // 迷因念完才報下一個目標數字
-          const n = this.pendingNum; this.pendingNum = null; this.say(n);
-        }
-      };
-      window.speechSynthesis.speak(u);
-    } catch (e) { this.meme67Playing = false; }
+  sayRemaining(remain, total) {
+    const count = Math.max(0, Number(remain) || 0);
+    const text = count === 0
+      ? t('speechAllFound')
+      : t('speechRemaining', { remain: count, total });
+    this.sayText(text);
   },
   toggle() {
     this.enabled = !this.enabled;
     localStorage.setItem('hunter67_speak', this.enabled ? 'on' : 'off');
     if (!this.enabled && this.ok) window.speechSynthesis.cancel();
     this.refresh();
-    if (this.enabled && Game.active && Game.target) this.say(Game.target);
+    if (this.enabled && Game.active && Game.target) this.sayRemaining(Game.targetsRemaining(), Game.targetTotal);
   },
   refresh() {
     for (const id of ['speakBtn', 'hudSpeakBtn']) {
@@ -2511,7 +2488,7 @@ const Game = {
     document.getElementById('targetNum').textContent = '67';
     this.updateHud();
     Sound.seq([523, 784]);
-    Speech.say(67);               // 開場念出 67（含 20% 機率「six～seven～」迷因彩蛋）
+    Speech.sayRemaining(this.targetsRemaining(), this.targetTotal);
     Music.play();
   },
   reset() {
@@ -2523,7 +2500,6 @@ const Game = {
     Zoom.reset();
     for (const r of regions) resetRegionStyle(r);
     hideToast(); hideOverlay();
-    Speech.meme67Playing = false; Speech.pendingNum = null;   // 清掉殘留的 67 迷因狀態
     if (Speech.ok) { try { window.speechSynthesis.cancel(); } catch (e) {} }
   },
   quit() {
@@ -2576,6 +2552,7 @@ const Game = {
       markFoundTarget(r);
       Sound.correct();
       this.updateHud();
+      Speech.sayRemaining(this.targetsRemaining(), this.targetTotal);
       if (this.found >= this.targetTotal) {
         hideToast();
         this.win();
@@ -3013,7 +2990,6 @@ for (const evt of ['pointerdown', 'touchstart', 'mousedown', 'keydown']) {
 }
 let startScreenMusicPausedByBlur = false;
 function pauseForPageBlur() {
-  Speech.ctrlHeld = false;
   if (Game.active && !Game.ended) {
     Game.pause();
     return;
@@ -3042,14 +3018,11 @@ document.addEventListener('keydown', e => {       // 桌機：空白鍵 / P / Es
     Game.togglePause();
   }
 });
-// 電腦版彩蛋：追蹤 Ctrl 按住狀態（按住期間報數一律念 67 迷因）。手機無 Ctrl 鍵故天生只在桌機生效。
-document.addEventListener('keydown', e => { if (e.key === 'Control') Speech.ctrlHeld = true; });
-document.addEventListener('keyup', e => { if (e.key === 'Control') Speech.ctrlHeld = false; });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) pauseForPageBlur();
   else resumeStartScreenMusic();
 });
-window.addEventListener('blur', pauseForPageBlur);   // 切走時清掉 Ctrl 狀態，避免卡住
+window.addEventListener('blur', pauseForPageBlur);
 window.addEventListener('focus', resumeStartScreenMusic);
 window.addEventListener('resize', () => { Layout.update(); Zoom.clamp(); Zoom.apply(); });
 window.addEventListener('orientationchange', () => setTimeout(() => { Layout.update(); Zoom.clamp(); Zoom.apply(); }, 250));
