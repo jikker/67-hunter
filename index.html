@@ -189,6 +189,7 @@
     font-size: 15px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,.4);
     max-width: 92vw; text-align: center;
   }
+  .toast.ok { background: #047857; }
   .overlay {
     position: fixed; inset: 0;
     background:
@@ -394,7 +395,12 @@
   svg text { pointer-events: none; user-select: none; -webkit-user-select: none; }
   body.gaming svg polygon, body.gaming svg circle { cursor: pointer; }
   body.gaming svg .cell-shape:not(.found):hover { fill: var(--pending-hover); }
-  body.gaming svg .cell-shape.found { cursor: default; }
+  body.gaming svg .cell-shape.found {
+    cursor: default;
+    stroke: #e11d48;
+    stroke-width: 1.25;
+    filter: drop-shadow(0 0 2px rgba(225,29,72,.9));
+  }
   [hidden] { display: none !important; }
   /* ---- 棋盤（A4 紙）：手機滿版 ---- */
   .sheet {
@@ -913,27 +919,28 @@
 </div>
 <div class="cta" id="cta" hidden>
   <button id="startBtn"><svg class="ui-icon"><use href="#icon-target"></use></svg><span class="btn-label">開始遊戲</span></button>
-  <div class="cta-hint">在彩色格盤裡找出唯一的 67！（可捏合放大）</div>
+  <div class="cta-hint">在彩色格盤裡找出所有 67！（可捏合放大）</div>
 </div>
 <script>
 'use strict';
 /*
  * 67 獵人（67 Hunter）— 由「數字獵人」(T-152) 改版的找 67 反應遊戲。
- * 棋盤（A4 隨機 Voronoi 格）全是誘餌 66 / 76 / 77，只有一格是「67」，比誰最快找到並點擊；計時到 0.01 秒。
+ * 棋盤（A4 隨機 Voronoi 格）全是誘餌 66 / 76 / 77，混入數個「67」，比誰最快全部找完；計時到 0.01 秒。
  * 版面生成沿用數字獵人：圓形格 + Voronoi 切割、群聚+均勻種子混合、細長格數字沿長軸旋轉、viewBox 以 mm 為單位（列印即 A4）。
  *
  * === 67 獵人自身版本史（與 T-152 數字獵人各自獨立計算，不繼承其 vNN）===
- * 67-v1：由數字獵人 fork 成獨立單檔——目標改為找唯一的 67、誘餌 66/76/77、計分改用找到 67 的用時、
+ * 67-v1：由數字獵人 fork 成獨立單檔——目標改為找 67、誘餌 66/76/77、計分改用找到 67 的用時、
  *        翡翠綠×深青主題、專屬 App icon、namespace 化 localStorage（hunter67_*）、全新後端 Sheet 與 HMAC 密鑰。
  * 67-v2：同步排行榜優化——開場 ?mode=all 一次抓四難度榜＋2 分快取；結算前先用門檻判斷，明確沒進榜就不打 POST、不再顯示「已上傳」。
  * 67-v3：前端版號重新計算、與 T-152 lineage 切割——改寫本 changelog 為 67 獵人自身版本史，
  *        移除沿用自數字獵人的 v1–v58 紀錄與散落於樣式區的 v44/v45 inline 標號（版號自此只跟 67 獵人自身改動走）。
  * 67-v6：背景音樂改用 HydroGene「8-bit Epic Space Shooter Music」（OpenGameArt, CC0），清除舊重複 audio 標籤。
  * 67-v7：棋盤格預設改為隨機亮色填滿，錯誤閃爍與重置都回到原本底色；App icon 改走彩色格盤視覺。
- * 67-v8：開始面板第一條規則改為依目前難度顯示「在 N 格中找出唯一的 67」。
+ * 67-v8：開始面板第一條規則改為依目前難度顯示「在 N 格中找出 67」。
+ * 67-v10：每局改為多個 67 目標（25/50/75/100 格＝3/6/9/12 個），HUD 顯示剩餘數，找到的 67 以高對比黃底紅框保留。
  */
 
-const APP_VERSION = 'v9';  // 67 獵人自身版本；v9：排行榜切換難度後，再玩一次使用目前榜單難度
+const APP_VERSION = 'v10';  // 67 獵人自身版本；v10：多個 67 目標與剩餘數提示
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -968,7 +975,7 @@ const I18N = {
     zoomOut: '縮小',
     zoomReset: '回復原始大小',
     startGame: '開始遊戲',
-    ctaHint: '在一堆 66、76、77 裡，用最快速度找出唯一的 67！（可捏合放大）',
+    ctaHint: '在一堆 66、76、77 裡，用最快速度找出所有 67！（可捏合放大）',
     musicOn: '背景音樂開啟',
     musicOff: '背景音樂關閉',
     soundOn: '音效開啟',
@@ -990,16 +997,18 @@ const I18N = {
     modeNormalShort: '普通',
     modeHardShort: '困難',
     wrongTap: '❌ 點到的是 {wrong}，不是 67（再錯 {left} 次就結束）',
+    foundTarget: '✅ 找到 {found}/{total} 個 67，還剩 {remain} 個',
+    remainingTargets: '剩 {remain}/{total}',
     foundStatsNone: '📊 每題耗時：尚未找到任何數字。',
     foundStats: '📊 每題耗時：最快 <b>{fastSec}</b>（數字 {fastNum}），最慢 <b>{slowSec}</b>（數字 {slowNum}），平均 <b>{avgSec}</b>。',
     secondsShort: '{value} 秒',
     gameOver: '遊戲結束',
-    loseDetail: '錯了 3 次！最後點到的是 <b>{wrong}</b>，要找的是唯一的 <b>67</b>。',
+    loseDetail: '錯了 3 次！最後點到的是 <b>{wrong}</b>，還有 <b>{remain}</b> 個 67 沒找到。',
     elapsedProgress: '⏱ 用時 {time}，完成 {found}/{total} 格。',
     playAgain: '再玩一次',
     leaveGame: '離開遊戲',
-    winTitle: '抓到 67 了！',
-    winDetail: '⏱ 你花了 <b>{time}</b> 找到唯一的 67，錯誤 {errors} 次。',
+    winTitle: '67 全抓到了！',
+    winDetail: '⏱ 你花了 <b>{time}</b> 找到全部 {targets} 個 67，錯誤 {errors} 次。',
     leaveName: '留下名字進排行榜：',
     namePlaceholder: '你的名字（最多 8 字）',
     saveLeaderboard: '存入排行榜',
@@ -1030,9 +1039,9 @@ const I18N = {
     lbTitle: '排行榜 · {mode}',
     aboutTitle: '67 獵人 — 玩法',
     about1: '按「開始遊戲」，計時立刻開始。',
-    about2: '棋盤上全是 66、76、77，只有一格是 67——找到它並點下去！',
-    about3: '點錯扣 1 條命，錯 3 次遊戲結束；越快找到 67 排名越前。',
-    about4: '67 可能藏在很小的格子裡，字太小就兩指放大找；切到背景會自動暫停。',
+    about2: '棋盤上全是 66、76、77，混著數個 67——把所有 67 都找出來！',
+    about3: '點錯扣 1 條命，錯 3 次遊戲結束；越快找完全部 67 排名越前。',
+    about4: '67 可能藏在很小的格子裡；找到的 67 會變成醒目的黃底紅框，HUD 會顯示還剩幾個。',
     about5: '字太小可兩指捏合放大，放大後單指拖移棋盤。',
     about6: '右上選單可查看玩法說明與音樂版權。',
     musicCredit: '背景音樂：HydroGene「8-bit Epic Space Shooter Music」（OpenGameArt，CC0）',
@@ -1042,8 +1051,8 @@ const I18N = {
     adConsent: '管理廣告同意',
     version: '版本 {version}',
     refreshTitle: '點我強制刷新頁面（抓最新版）',
-    startRule1: '在{count}格中找出唯一的 67。',
-    startRule2: '計時進行，越快找到越好。',
+    startRule1: '在{count}格中找出全部 {targets} 個 67。',
+    startRule2: '計時進行，越快找完越好。',
     startRule3: '有三次錯誤機會，錯 3 次結束。',
     difficultyLabel: '選擇難度（格子越多、67 越難找）',
     howTo: '玩法說明'
@@ -1073,7 +1082,7 @@ const I18N = {
     zoomOut: 'Zoom out',
     zoomReset: 'Reset zoom',
     startGame: 'Start Game',
-    ctaHint: 'Among lots of 66, 76 and 77 — find the one and only 67 as fast as you can! Pinch to zoom.',
+    ctaHint: 'Among lots of 66, 76 and 77 — find every 67 as fast as you can! Pinch to zoom.',
     musicOn: 'Background music on',
     musicOff: 'Background music off',
     soundOn: 'Sound effects on',
@@ -1095,16 +1104,18 @@ const I18N = {
     modeNormalShort: 'Normal',
     modeHardShort: 'Hard',
     wrongTap: '❌ You tapped {wrong}, not 67. Game over after {left} more mistake(s).',
+    foundTarget: '✅ Found {found}/{total} 67s. {remain} left.',
+    remainingTargets: '{remain}/{total} left',
     foundStatsNone: '📊 Per-number time: no numbers found yet.',
     foundStats: '📊 Per-number time: fastest <b>{fastSec}</b> (number {fastNum}), slowest <b>{slowSec}</b> (number {slowNum}), average <b>{avgSec}</b>.',
     secondsShort: '{value}s',
     gameOver: 'Game Over',
-    loseDetail: 'Three mistakes. Last tap: <b>{wrong}</b>; the target is the only <b>67</b>.',
+    loseDetail: 'Three mistakes. Last tap: <b>{wrong}</b>; <b>{remain}</b> 67(s) left.',
     elapsedProgress: '⏱ Time {time}, completed {found}/{total} cells.',
     playAgain: 'Play Again',
     leaveGame: 'Leave Game',
-    winTitle: 'Got 67!',
-    winDetail: '⏱ You found 67 in <b>{time}</b>, mistakes: {errors}.',
+    winTitle: 'All 67s Found!',
+    winDetail: '⏱ You found all {targets} 67s in <b>{time}</b>, mistakes: {errors}.',
     leaveName: 'Enter your name for the leaderboard:',
     namePlaceholder: 'Your name (8 chars max)',
     saveLeaderboard: 'Save Score',
@@ -1135,9 +1146,9 @@ const I18N = {
     lbTitle: 'Leaderboard · {mode}',
     aboutTitle: '67 Hunter — How to Play',
     about1: 'Tap “Start Game”; the timer starts immediately.',
-    about2: 'The board is full of 66, 76 and 77 — only one cell is 67. Find it and tap it!',
-    about3: 'A wrong tap costs 1 life. Three mistakes end the game. Faster finds rank higher.',
-    about4: '67 may hide in a tiny cell — pinch to zoom if the text is small. Switching away pauses the game.',
+    about2: 'The board is full of 66, 76 and 77, with several 67s mixed in. Find every 67!',
+    about3: 'A wrong tap costs 1 life. Three mistakes end the game. Faster clears rank higher.',
+    about4: 'A found 67 turns into a bright yellow cell with a red outline, and the HUD shows how many remain.',
     about5: 'Pinch to zoom when numbers are small, then drag the board with one finger.',
     about6: 'Use the top menu to view instructions and music credits.',
     musicCredit: 'Music: “8-bit Epic Space Shooter Music” by HydroGene (OpenGameArt, CC0)',
@@ -1147,8 +1158,8 @@ const I18N = {
     adConsent: 'Manage ad consent',
     version: 'Version {version}',
     refreshTitle: 'Force refresh and load the latest version',
-    startRule1: 'Find the only 67 in {count} cells.',
-    startRule2: 'You are timed — be quick!',
+    startRule1: 'Find all {targets} 67s in {count} cells.',
+    startRule2: 'You are timed — clear them fast!',
     startRule3: 'Three mistakes and the game is over.',
     difficultyLabel: 'Choose difficulty (more cells = harder to find 67)',
     howTo: 'How to Play'
@@ -1619,11 +1630,22 @@ function hasLabelOverlap(model) {
   return false;
 }
 
-// 67 獵人：棋盤每一格填入誘餌 66 / 76 / 77，僅隨機一格放唯一的目標「67」。
+// 67 獵人：棋盤每一格填入誘餌 66 / 76 / 77，依格數放入約 12% 的目標「67」。
 const DECOYS = [66, 76, 77];
+function targetCountFor(total) {
+  return Math.max(1, Math.round((Number(total) || 0) * 0.12));
+}
 function makeBoardNums() {
   const nums = Array.from({ length: N }, () => DECOYS[Math.floor(Math.random() * DECOYS.length)]);
-  nums[Math.floor(Math.random() * N)] = 67;   // 唯一的 67
+  const targetCount = Math.min(N, targetCountFor(N));
+  const slots = Array.from({ length: N }, (_, i) => i);
+  for (let i = slots.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = slots[i];
+    slots[i] = slots[j];
+    slots[j] = tmp;
+  }
+  for (let i = 0; i < targetCount; i++) nums[slots[i]] = 67;
   return nums;
 }
 // 相容舊呼叫點（draw / Game）：67 獵人不需要出題順序，沿用同名回傳棋盤數字。
@@ -1682,6 +1704,7 @@ function draw() {
     el.dataset.baseFill = fill;
     el.setAttribute('stroke', '#111');
     el.setAttribute('stroke-width', '0.35');
+    el.dataset.baseStrokeWidth = '0.35';
     el.setAttribute('stroke-linejoin', 'round');
     el.classList.add('cell-shape');
     svg.appendChild(el);
@@ -1701,6 +1724,7 @@ function draw() {
     el.dataset.baseFill = fill;
     el.setAttribute('stroke', '#111');
     el.setAttribute('stroke-width', '0.5');
+    el.dataset.baseStrokeWidth = '0.5';
     el.classList.add('cell-shape');
     svg.appendChild(el);
     circEls.push(el);
@@ -2021,7 +2045,7 @@ const Music = {
 };
 
 // ================= 遊戲模式「67 獵人」 =================
-// 規則：棋盤填滿 66/76/77 誘餌，只有一格是 67；點錯扣 1 條命，錯 3 次遊戲結束。
+// 規則：棋盤填滿 66/76/77 誘餌，混入多個 67；點錯扣 1 條命，錯 3 次遊戲結束。
 const BASE_PALETTE = ['#fef3c7', '#dcfce7', '#cffafe', '#dbeafe', '#ede9fe', '#fce7f3',
                       '#ffedd5', '#ccfbf1', '#e0f2fe', '#f5f5f4', '#ecfccb', '#fae8ff'];
 const PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399', '#22d3ee',
@@ -2374,8 +2398,9 @@ function fmtTime(s) {
   return m + ':' + (rest < 10 ? '0' : '') + rest.toFixed(2);
 }
 let toastTimer = null;
-function showToast(msg) {
+function showToast(msg, kind) {
   const t = document.getElementById('toast');
+  t.className = 'toast' + (kind === 'ok' ? ' ok' : '');
   t.textContent = msg; t.hidden = false;
   const hud = document.getElementById('hud');
   if (isLandscapePlay()) {
@@ -2388,7 +2413,11 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(hideToast, 2600);
 }
-function hideToast() { document.getElementById('toast').hidden = true; }
+function hideToast() {
+  const t = document.getElementById('toast');
+  t.hidden = true;
+  t.className = 'toast';
+}
 function showPanel(html, panelClass = '') {
   toggleMenu(false);
   const panel = document.getElementById('panel');
@@ -2428,9 +2457,36 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+function markFoundTarget(r) {
+  r.shape.setAttribute('fill', '#facc15');
+  r.shape.setAttribute('stroke', '#e11d48');
+  r.shape.setAttribute('stroke-width', '1.25');
+  r.shape.classList.add('found');
+  if (r.text) {
+    r.text.setAttribute('fill', '#111827');
+    r.text.setAttribute('font-weight', '900');
+    r.text.setAttribute('stroke', '#fff7ed');
+    r.text.setAttribute('stroke-width', '0.55');
+    r.text.setAttribute('paint-order', 'stroke');
+  }
+}
+function resetRegionStyle(r) {
+  r.shape.setAttribute('fill', r.baseFill || r.shape.dataset.baseFill || '#fff');
+  r.shape.setAttribute('stroke', '#111');
+  r.shape.setAttribute('stroke-width', r.shape.dataset.baseStrokeWidth || '0.35');
+  r.shape.classList.remove('found');
+  if (r.text) {
+    r.text.setAttribute('fill', '#111');
+    r.text.removeAttribute('font-weight');
+    r.text.removeAttribute('stroke');
+    r.text.removeAttribute('stroke-width');
+    r.text.removeAttribute('paint-order');
+  }
+  r.found = false;
+}
 
 const Game = {
-  active: false, ended: false, paused: false, mode: 'normal', target: 0, queue: [], found: 0, errors: 0,
+  active: false, ended: false, paused: false, mode: 'normal', target: 0, targetTotal: 1, queue: [], found: 0, errors: 0,
   t0: 0, pausedMs: 0, pauseStart: 0, tick: null, questionStartMs: 0, perNum: [],
   start(mode) {
     this.reset();
@@ -2447,6 +2503,7 @@ const Game = {
     document.body.classList.add('gaming');
     Layout.update();
     this.found = 0; this.errors = 0;
+    this.targetTotal = targetCountFor(N);
     this.target = 67;
     this.t0 = Date.now();
     this.tick = setInterval(() => this.showTime(), 100);   // 反應遊戲：100ms 更新計時，更跟手
@@ -2464,12 +2521,7 @@ const Game = {
     document.getElementById('pauseScreen').hidden = true;
     this.syncPauseBtn();
     Zoom.reset();
-    for (const r of regions) {
-      r.shape.setAttribute('fill', r.baseFill || r.shape.dataset.baseFill || '#fff');
-      r.shape.classList.remove('found');
-      if (r.text) r.text.setAttribute('fill', '#111');
-      r.found = false;
-    }
+    for (const r of regions) resetRegionStyle(r);
     hideToast(); hideOverlay();
     Speech.meme67Playing = false; Speech.pendingNum = null;   // 清掉殘留的 67 迷因狀態
     if (Speech.ok) { try { window.speechSynthesis.cancel(); } catch (e) {} }
@@ -2513,18 +2565,27 @@ const Game = {
     b.title = this.paused ? t('resume') : t('pause');
     b.setAttribute('aria-label', b.title);
   },
-  targetRegion() { return regionByNum.get(67); },   // 67 是唯一值，Map 必取得到正確的目標格
+  targetsRemaining() { return Math.max(0, this.targetTotal - this.found); },
+  targetRegion() { return regions.find(r => r.num === 67 && !r.found); },
   tap(r, opts) {
     if (!this.active || this.paused || r.found) return;
     if (!(opts && opts.force) && Zoom.suppressed()) return;         // 拖移/捏合手勢結尾不算點擊
-    if (r.num === 67) {                              // 找到唯一的 67 → 過關（精準命中，點旁邊不算）
-      this.found = 1;
+    if (r.num === 67) {                              // 找到 67 → 高亮保留，全部找完才過關
+      this.found++;
       r.found = true;
-      r.shape.setAttribute('fill', PALETTE[Math.floor(Math.random() * PALETTE.length)]);
-      if (r.text) r.text.setAttribute('fill', '#fff');
-      r.shape.classList.add('found');
-      Sound.correct(); hideToast();
-      this.win();
+      markFoundTarget(r);
+      Sound.correct();
+      this.updateHud();
+      if (this.found >= this.targetTotal) {
+        hideToast();
+        this.win();
+      } else {
+        showToast(t('foundTarget', {
+          found: this.found,
+          total: this.targetTotal,
+          remain: this.targetsRemaining()
+        }), 'ok');
+      }
     } else {                                         // 點到 66 / 76 / 77 → 扣命
       this.errors++;
       Sound.wrong();
@@ -2544,10 +2605,11 @@ const Game = {
   updateHud() {
     document.getElementById('livesDisp').textContent =
       '♥'.repeat(Math.max(0, 3 - this.errors)) + '♡'.repeat(Math.min(3, this.errors));
-    const prog = document.getElementById('progDisp'); if (prog) prog.textContent = '';
+    const prog = document.getElementById('progDisp');
+    if (prog) prog.textContent = t('remainingTargets', { remain: this.targetsRemaining(), total: this.targetTotal });
     this.showTime();
   },
-  foundStats() { return ''; },   // 67 獵人只找一個目標，無逐題統計
+  foundStats() { return ''; },   // 67 獵人以找完全部 67 的總時間排名，無逐題統計
   lose(wrongNum) {
     this.active = false;
     this.ended = true;
@@ -2556,7 +2618,7 @@ const Game = {
     Sound.over();
     currentPanelRenderer = null;
     showPanel('<h2>' + iconSvg('exit') + t('gameOver') + '</h2>' +
-      '<p>' + t('loseDetail', { wrong: wrongNum }) + '</p>' +
+      '<p>' + t('loseDetail', { wrong: wrongNum, remain: this.targetsRemaining() }) + '</p>' +
       '<div class="btn-row"><button onclick="startGame(&quot;' + this.mode + '&quot;)">' + buttonHtml('retry', t('playAgain')) + '</button>' +
       '<button class="secondary" onclick="Game.quit()">' + buttonHtml('exit', t('leaveGame')) + '</button></div>');
   },
@@ -2569,7 +2631,7 @@ const Game = {
     Sound.win();
     currentPanelRenderer = null;
     showPanel('<h2>' + iconSvg('trophy') + t('winTitle') + '</h2>' +
-      '<p>' + t('winDetail', { time: fmtTime(sec), sec, errors: this.errors }) + '</p>' +
+      '<p>' + t('winDetail', { time: fmtTime(sec), sec, errors: this.errors, targets: this.targetTotal }) + '</p>' +
       '<p>' + t('leaveName') + '</p>' +
       '<input type="text" id="nameInput" maxlength="8" placeholder="' + t('namePlaceholder') + '" value="' + escapeHtml(savedPlayerName()) + '" onkeydown="if(event.key===&quot;Enter&quot;){saveScore(' + sec + ')}">' +
       '<div class="btn-row"><button onclick="saveScore(' + sec + ')">' + buttonHtml('save', t('saveLeaderboard')) + '</button>' +
@@ -2857,7 +2919,7 @@ function showStartDialog() {
     '<section class="start-info">' +
     '<h2>' + iconSvg('target') + t('title') + '</h2>' +
     '<div class="intro-card">' +
-    '<div class="rule"><b>🎯</b><span>' + t('startRule1', { count: N }) + '</span></div>' +
+    '<div class="rule"><b>' + targetCountFor(N) + '</b><span>' + t('startRule1', { count: N, targets: targetCountFor(N) }) + '</span></div>' +
     '<div class="rule"><b>⏱</b><span>' + t('startRule2') + '</span></div>' +
     '<div class="rule"><b>3</b><span>' + t('startRule3') + '</span></div>' +
     '</div>' +
