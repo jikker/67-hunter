@@ -447,7 +447,6 @@
   .cta button:hover { background: #34d399; }
   .cta .cta-hint { font-size: 12.5px; color: #f3f4f6; text-shadow: 0 1px 4px #000; }
   body.gaming .cta { display: none; }
-  body.gaming > .langbtn { display: inline-flex; }
   /* ---- 暫停模式：時間停止、棋盤霧化隱藏（HUD/計時仍清晰） ---- */
   .pause-screen {
     position: fixed; inset: 0; z-index: 4;   /* 蓋住棋盤(z:auto)、在 HUD(z:5)/topbar(z:10) 之下 */
@@ -688,12 +687,7 @@
     display: inline-flex;
   }
   body.gaming.landscape-play > .langbtn {
-    display: inline-flex;
-    top: calc(8px + env(safe-area-inset-top));
-    right: calc(8px + env(safe-area-inset-right));
-    width: 34px;
-    height: 34px;
-    font-size: 18px;
+    display: none;
   }
   body.gaming.landscape-play .hud button {
     width: 100%;
@@ -969,7 +963,7 @@
  * 67-v16：遊戲開始後保留語言切換鈕，避免進入 gaming/landscape-play 狀態時被 CSS 隱藏。
  */
 
-const APP_VERSION = 'v16';  // 67 獵人自身版本；v16：遊戲中保留語言切換鈕
+const APP_VERSION = 'v17';  // 67 獵人自身版本；v17：語言鈕改回 T-152 浮動做法（直式浮動右上、橫式收進HUD），不再與放棄鈕同列/擋放棄。v16：遊戲中保留語言切換鈕
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
