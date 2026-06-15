@@ -933,7 +933,7 @@
  * 67-v8：開始面板第一條規則改為依目前難度顯示「在 N 格中找出唯一的 67」。
  */
 
-const APP_VERSION = 'v8';  // 67 獵人自身版本；v8：開始規則依目前難度顯示 N 格
+const APP_VERSION = 'v9';  // 67 獵人自身版本；v9：排行榜切換難度後，再玩一次使用目前榜單難度
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -2432,10 +2432,13 @@ function escapeHtml(s) {
 const Game = {
   active: false, ended: false, paused: false, mode: 'normal', target: 0, queue: [], found: 0, errors: 0,
   t0: 0, pausedMs: 0, pauseStart: 0, tick: null, questionStartMs: 0, perNum: [],
-  start() {
+  start(mode) {
     this.reset();
+    const selectedMode = MODE[mode] ? mode : savedMode();
+    localStorage.setItem('hunter67_mode', selectedMode);
+    if (N !== MODE[selectedMode]) N = MODE[selectedMode];
     draw();                       // 每一局重畫全新棋盤：67 的位置與 66/76/77 誘餌分佈全新
-    this.mode = savedMode();      // 記住本局難度，結算時存入對應排行榜
+    this.mode = selectedMode;      // 記住本局難度，結算時存入對應排行榜
     CloudLb.prefetchAll();        // 開場預抓全難度榜單（背景、不 await），結算時用來判斷要不要上傳
     this.active = true;
     this.ended = false;
@@ -2554,7 +2557,7 @@ const Game = {
     currentPanelRenderer = null;
     showPanel('<h2>' + iconSvg('exit') + t('gameOver') + '</h2>' +
       '<p>' + t('loseDetail', { wrong: wrongNum }) + '</p>' +
-      '<div class="btn-row"><button onclick="startGame()">' + buttonHtml('retry', t('playAgain')) + '</button>' +
+      '<div class="btn-row"><button onclick="startGame(&quot;' + this.mode + '&quot;)">' + buttonHtml('retry', t('playAgain')) + '</button>' +
       '<button class="secondary" onclick="Game.quit()">' + buttonHtml('exit', t('leaveGame')) + '</button></div>');
   },
   win() {
@@ -2745,7 +2748,7 @@ function showLeaderboard(options) {
     '<div id="lbTable"><p class="lb-note">' + t('loadingCloud') + '</p></div>' +
     '<div class="btn-row">' +
     (afterGame
-      ? '<button onclick="startGame()">' + buttonHtml('retry', t('playAgain')) + '</button><button class="secondary" onclick="Game.quit()">' + buttonHtml('exit', t('backStart')) + '</button>'
+      ? '<button onclick="startGame(&quot;' + mode + '&quot;)">' + buttonHtml('retry', t('playAgain')) + '</button><button class="secondary" onclick="Game.quit()">' + buttonHtml('exit', t('backStart')) + '</button>'
       : fromStart
         ? '<button class="secondary" onclick="showStartDialog()">' + buttonHtml('close', t('backStart')) + '</button>'
         : '<button class="secondary" onclick="hideOverlay()">' + buttonHtml('close', t('close')) + '</button>') +
@@ -2817,22 +2820,27 @@ function selectMode(mode) {
   showStartDialog();                                   // 重新渲染面板：更新高亮與規則格數
 }
 let __pendingStart = false;
-function startGame() {                                  // 用目前選定難度（N）開始
+let __pendingStartMode = null;
+function startGame(mode) {                              // 用目前選定難度（N）開始；排行榜可指定目前榜單難度
+  const selectedMode = MODE[mode] ? mode : null;
   // iOS App：先讓原生決定是否播插頁廣告，**廣告關閉後**才真正開始遊戲（避免遊戲在廣告蓋著時就跑）。
   if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.adBridge) {
     __pendingStart = true;
+    __pendingStartMode = selectedMode;
     try { window.webkit.messageHandlers.adBridge.postMessage({ type: 'startGame' }); }
     catch (e) { proceedGame(); return; }
     setTimeout(function () { if (__pendingStart) proceedGame(); }, 30000); // 安全網：原生若沒回也不卡住
   } else {
-    Game.start();                                      // 網頁版：直接開始（無廣告）
+    Game.start(selectedMode);                          // 網頁版：直接開始（無廣告）
   }
 }
 // 由原生在「廣告關閉後 / 這次不需廣告」時呼叫，才真正開始遊戲。
 function proceedGame() {
   if (!__pendingStart) return;
+  const mode = __pendingStartMode;
   __pendingStart = false;
-  Game.start();
+  __pendingStartMode = null;
+  Game.start(mode);
 }
 window.proceedGame = proceedGame;
 function showStartDialog() {
