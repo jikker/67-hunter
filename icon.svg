@@ -1,45 +1,79 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bg" x1="74" y1="30" x2="438" y2="482" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#34d399"/>
-      <stop offset="0.48" stop-color="#10b981"/>
-      <stop offset="1" stop-color="#064e3b"/>
+    <linearGradient id="bg" x1="42" y1="26" x2="470" y2="486" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="0.48" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#312e81"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="42%" r="60%">
-      <stop offset="0" stop-color="#d1fae5" stop-opacity="0.45"/>
-      <stop offset="0.58" stop-color="#34d399" stop-opacity="0.1"/>
-      <stop offset="1" stop-color="#064e3b" stop-opacity="0"/>
+    <linearGradient id="boardFill" x1="88" y1="80" x2="424" y2="432" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <linearGradient id="badge" x1="326" y1="334" x2="452" y2="458" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#020617"/>
+    </linearGradient>
+    <radialGradient id="tapGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="0.45" stop-color="#fde68a" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#f97316" stop-opacity="0"/>
     </radialGradient>
-    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#022c22" flood-opacity="0.45"/>
+    <filter id="shadow" x="-18%" y="-16%" width="136%" height="142%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#020617" flood-opacity="0.42"/>
     </filter>
-    <filter id="textShadow" x="-15%" y="-15%" width="130%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="6" flood-color="#022c22" flood-opacity="0.55"/>
+    <filter id="badgeShadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#020617" flood-opacity="0.5"/>
     </filter>
+    <clipPath id="boardClip">
+      <rect x="86" y="78" width="340" height="340" rx="48"/>
+    </clipPath>
   </defs>
 
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
+  <path d="M56 412C122 312 214 274 306 226c76-40 118-86 150-166v452H56z" fill="#0ea5e9" opacity="0.13"/>
+  <path d="M0 84c90 18 157 50 218 118 70 78 141 98 294 58v252H0z" fill="#f97316" opacity="0.11"/>
 
-  <g font-family="Arial, Helvetica, sans-serif" font-weight="900" text-anchor="middle" fill="#ecfdf5" opacity="0.13">
-    <text x="92" y="104" font-size="54" transform="rotate(-16 92 104)">66</text>
-    <text x="414" y="92" font-size="58" transform="rotate(14 414 92)">76</text>
-    <text x="118" y="410" font-size="60" transform="rotate(12 118 410)">77</text>
-    <text x="424" y="392" font-size="54" transform="rotate(-18 424 392)">66</text>
-    <text x="72" y="262" font-size="48" transform="rotate(-10 72 262)">76</text>
-    <text x="454" y="250" font-size="48" transform="rotate(9 454 250)">77</text>
+  <g filter="url(#shadow)" transform="rotate(-8 256 256)">
+    <rect x="86" y="78" width="340" height="340" rx="48" fill="url(#boardFill)"/>
+    <g clip-path="url(#boardClip)">
+      <rect x="86" y="78" width="340" height="340" fill="#e2e8f0"/>
+      <path d="M86 78h76v84H86z" fill="#22c55e"/>
+      <path d="M162 78h78v62h-78z" fill="#38bdf8"/>
+      <path d="M240 78h88v78h-88z" fill="#a78bfa"/>
+      <path d="M328 78h98v92h-98z" fill="#fb7185"/>
+
+      <path d="M86 162h54v86H86z" fill="#fbbf24"/>
+      <path d="M140 140h100v108H140z" fill="#06b6d4"/>
+      <path d="M240 156h72v92h-72z" fill="#84cc16"/>
+      <path d="M312 170h114v78H312z" fill="#f97316"/>
+
+      <path d="M86 248h92v72H86z" fill="#60a5fa"/>
+      <path d="M178 248h70v92h-70z" fill="#e879f9"/>
+      <path d="M248 248h94v70h-94z" fill="#facc15"/>
+      <path d="M342 248h84v102h-84z" fill="#14b8a6"/>
+
+      <path d="M86 320h72v98H86z" fill="#ef4444"/>
+      <path d="M158 340h88v78h-88z" fill="#10b981"/>
+      <path d="M246 318h86v100h-86z" fill="#818cf8"/>
+      <path d="M332 350h94v68h-94z" fill="#fb923c"/>
+
+      <path d="M86 78h340v340H86z" fill="none" stroke="#ffffff" stroke-width="14" stroke-linejoin="round" opacity="0.78"/>
+      <path d="M160 78v340M240 78v340M326 78v340M86 160h340M86 248h340M86 326h340" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.74"/>
+
+      <path d="M248 248h94v70h-94z" fill="#fde047"/>
+      <path d="M248 248h94v70h-94z" fill="none" stroke="#f8fafc" stroke-width="14" opacity="0.9"/>
+      <circle cx="296" cy="284" r="64" fill="url(#tapGlow)"/>
+      <circle cx="296" cy="284" r="24" fill="#ffffff"/>
+      <circle cx="296" cy="284" r="11" fill="#0f172a"/>
+    </g>
+    <rect x="86" y="78" width="340" height="340" rx="48" fill="none" stroke="#f8fafc" stroke-width="14"/>
   </g>
 
-  <g filter="url(#textShadow)">
-    <text x="252" y="324" font-family="Arial, Helvetica, sans-serif" font-size="230" font-weight="900" text-anchor="middle" fill="#f0fdf4">67</text>
-    <text x="252" y="324" font-family="Arial, Helvetica, sans-serif" font-size="230" font-weight="900" text-anchor="middle" fill="none" stroke="#064e3b" stroke-width="8" stroke-opacity="0.65">67</text>
-  </g>
-
-  <g filter="url(#softShadow)">
-    <line x1="358" y1="354" x2="436" y2="432" stroke="#0f3d3a" stroke-width="38" stroke-linecap="round"/>
-    <line x1="358" y1="354" x2="436" y2="432" stroke="#d1fae5" stroke-width="24" stroke-linecap="round"/>
-    <circle cx="264" cy="248" r="132" fill="#ecfdf5" fill-opacity="0.08" stroke="#d1fae5" stroke-width="22"/>
-    <circle cx="264" cy="248" r="108" fill="none" stroke="#064e3b" stroke-width="8" stroke-opacity="0.45"/>
-    <path d="M184 170c26-25 67-38 105-27" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" opacity="0.55"/>
+  <g filter="url(#badgeShadow)">
+    <rect x="292" y="326" width="178" height="132" rx="38" fill="url(#badge)"/>
+    <rect x="303" y="337" width="156" height="110" rx="30" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.84"/>
+    <text x="381" y="421" font-family="Arial, Helvetica, sans-serif" font-size="84" font-weight="900" text-anchor="middle" fill="#ffffff">67</text>
+    <circle cx="314" cy="356" r="13" fill="#22c55e"/>
+    <circle cx="450" cy="430" r="11" fill="#f97316"/>
   </g>
 </svg>

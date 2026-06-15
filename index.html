@@ -8,11 +8,11 @@
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>67 獵人</title>
-<!-- 67-v1：網頁 favicon 改用 App Store 版渲染 PNG（與 App 圖示完全一致），?v1 強制更新被快取的舊圖示 -->
-<link rel="icon" type="image/png" sizes="180x180" href="icon-180.png?v1">
-<link rel="icon" type="image/png" sizes="512x512" href="app-icons/hunter67-512.png?v1">
-<link rel="icon" type="image/svg+xml" href="icon.svg?v1">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v1">
+<!-- 67-v7：favicon / App icon 改用彩色格盤版，?v7 強制更新被快取的舊圖示 -->
+<link rel="icon" type="image/png" sizes="180x180" href="icon-180.png?v7">
+<link rel="icon" type="image/png" sizes="512x512" href="app-icons/hunter67-512.png?v7">
+<link rel="icon" type="image/svg+xml" href="icon.svg?v7">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v7">
 <style>
   :root { color-scheme: light; --pending-hover: #d1d5db; }
   * { box-sizing: border-box; }
@@ -800,7 +800,7 @@
 </style>
 </head>
 <body>
-  <audio id="bgm" src="bgm.mp3?v6" loop preload="auto"></audio>
+  <audio id="bgm" src="bgm.mp3?v7" loop preload="auto"></audio>
 <svg class="icon-sprite" width="0" height="0" aria-hidden="true" focusable="false">
   <symbol id="icon-target" viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="8.5"></circle><circle cx="12" cy="12" r="3.2"></circle>
@@ -913,7 +913,7 @@
 </div>
 <div class="cta" id="cta" hidden>
   <button id="startBtn"><svg class="ui-icon"><use href="#icon-target"></use></svg><span class="btn-label">開始遊戲</span></button>
-  <div class="cta-hint">找出指定數字，把格子全部塗滿色！（可捏合放大）</div>
+  <div class="cta-hint">在彩色格盤裡找出唯一的 67！（可捏合放大）</div>
 </div>
 <script>
 'use strict';
@@ -929,9 +929,10 @@
  * 67-v3：前端版號重新計算、與 T-152 lineage 切割——改寫本 changelog 為 67 獵人自身版本史，
  *        移除沿用自數字獵人的 v1–v58 紀錄與散落於樣式區的 v44/v45 inline 標號（版號自此只跟 67 獵人自身改動走）。
  * 67-v6：背景音樂改用 HydroGene「8-bit Epic Space Shooter Music」（OpenGameArt, CC0），清除舊重複 audio 標籤。
+ * 67-v7：棋盤格預設改為隨機亮色填滿，錯誤閃爍與重置都回到原本底色；App icon 改走彩色格盤視覺。
  */
 
-const APP_VERSION = 'v6';  // 67 獵人自身版本；v6：背景音樂改用 OpenGameArt CC0 8-bit arcade loop
+const APP_VERSION = 'v7';  // 67 獵人自身版本；v7：棋盤預設隨機填色 + 彩色格盤 icon
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -1668,12 +1669,16 @@ function draw() {
   const nums = shuffleNums();
   let k = 0;
 
-  // 1) 多邊形格線（fill 白色才能接收點擊；遊戲塗色就是改 fill）
+  // 1) 多邊形格線（每格預設有亮底色；遊戲回饋只覆寫被點擊格）
   const polyEls = [];
+  let prevFill = '';
   for (const cell of model.cells) {
+    const fill = randomBaseFill(prevFill);
+    prevFill = fill;
     const el = document.createElementNS(NS, 'polygon');
     el.setAttribute('points', cell.poly.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' '));
-    el.setAttribute('fill', '#fff');
+    el.setAttribute('fill', fill);
+    el.dataset.baseFill = fill;
     el.setAttribute('stroke', '#111');
     el.setAttribute('stroke-width', '0.35');
     el.setAttribute('stroke-linejoin', 'round');
@@ -1682,14 +1687,17 @@ function draw() {
     polyEls.push(el);
   }
 
-  // 2) 圓形格（白底蓋住底下格線，本身是一格）
+  // 2) 圓形格（亮色底蓋住底下格線，本身是一格）
   const circEls = [];
   for (const c of model.circles) {
+    const fill = randomBaseFill(prevFill);
+    prevFill = fill;
     const el = document.createElementNS(NS, 'circle');
     el.setAttribute('cx', c.x.toFixed(2));
     el.setAttribute('cy', c.y.toFixed(2));
     el.setAttribute('r', c.r.toFixed(2));
-    el.setAttribute('fill', '#fff');
+    el.setAttribute('fill', fill);
+    el.dataset.baseFill = fill;
     el.setAttribute('stroke', '#111');
     el.setAttribute('stroke-width', '0.5');
     el.classList.add('cell-shape');
@@ -1726,6 +1734,8 @@ function draw() {
     const region = {
       num: numVal,
       shape: polyEls[pi++],
+      text,
+      baseFill: polyEls[pi - 1].dataset.baseFill || '#fff',
       found: false,
       poly: cell.labelPoly,
       hitPoly: cell.poly,            // 點擊判定用整塊可見格子，不是縮小的數字標示區（大格空白處也點得到）
@@ -1759,6 +1769,8 @@ function draw() {
     const region = {
       num: numVal,
       shape: circEls[ci++],
+      text,
+      baseFill: circEls[ci - 1].dataset.baseFill || '#fff',
       found: false,
       circle: c,
       center: [c.x, c.y],
@@ -2007,11 +2019,18 @@ const Music = {
   }
 };
 
-// ================= 遊戲模式「數字獵人」 =================
-// 規則：電腦隨機出 1-100 的目標數字，點對的格子塗滿顏色、出下一題；
-//       點錯出提示並扣 1 條命，錯 3 次遊戲結束；100 格全找完依用時進排行榜。
+// ================= 遊戲模式「67 獵人」 =================
+// 規則：棋盤填滿 66/76/77 誘餌，只有一格是 67；點錯扣 1 條命，錯 3 次遊戲結束。
+const BASE_PALETTE = ['#fef3c7', '#dcfce7', '#cffafe', '#dbeafe', '#ede9fe', '#fce7f3',
+                      '#ffedd5', '#ccfbf1', '#e0f2fe', '#f5f5f4', '#ecfccb', '#fae8ff'];
 const PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399', '#22d3ee',
                  '#60a5fa', '#a78bfa', '#f472b6', '#fb7185', '#4ade80', '#facc15'];
+function randomBaseFill(prev) {
+  if (BASE_PALETTE.length < 2) return BASE_PALETTE[0] || '#fff';
+  let color = prev;
+  while (color === prev) color = BASE_PALETTE[Math.floor(Math.random() * BASE_PALETTE.length)];
+  return color;
+}
 // 排行榜依難度分開存：簡單(1–50)、普通(1–75)、困難(1–100) 各一份、各取前 20 名。
 const LB_KEY_BASE = 'hunter67_leaderboard';   // 67 獵人四難度各一份本機備援
 function lbKey(mode) { return LB_KEY_BASE + '_' + (MODE[mode] ? mode : 'normal'); }
@@ -2402,7 +2421,7 @@ function installOverlayTouchLock() {
 function flashWrong(r) {
   const orig = r.shape.getAttribute('fill');
   r.shape.setAttribute('fill', '#fca5a5');
-  setTimeout(() => { if (!r.found) r.shape.setAttribute('fill', orig === '#fca5a5' ? '#fff' : orig); }, 380);
+  setTimeout(() => { if (!r.found) r.shape.setAttribute('fill', orig === '#fca5a5' ? (r.baseFill || '#fff') : orig); }, 380);
 }
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c =>
@@ -2442,8 +2461,9 @@ const Game = {
     this.syncPauseBtn();
     Zoom.reset();
     for (const r of regions) {
-      r.shape.setAttribute('fill', '#fff');
+      r.shape.setAttribute('fill', r.baseFill || r.shape.dataset.baseFill || '#fff');
       r.shape.classList.remove('found');
+      if (r.text) r.text.setAttribute('fill', '#111');
       r.found = false;
     }
     hideToast(); hideOverlay();
@@ -2497,6 +2517,7 @@ const Game = {
       this.found = 1;
       r.found = true;
       r.shape.setAttribute('fill', PALETTE[Math.floor(Math.random() * PALETTE.length)]);
+      if (r.text) r.text.setAttribute('fill', '#fff');
       r.shape.classList.add('found');
       Sound.correct(); hideToast();
       this.win();
