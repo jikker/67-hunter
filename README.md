@@ -10,7 +10,7 @@
 - 找到 67 → 過關，留名進排行榜（依用時由小到大排序）。
 - **四種難度＝格子數**：新手 25 格 / 簡單 50 格 / 普通 75 格 / 困難 100 格（格子越多越難找）。
 - 67 可能藏在很小的格子裡，**兩指捏合放大 / 滑鼠滾輪縮放**找；切到背景自動暫停。
-- 中英雙語、背景音樂（CC BY 4.0）、音效、語音報數（含 20% 機率「six～seven～」67 迷因彩蛋）。
+- 中英雙語、背景音樂（OpenGameArt CC0）、音效、語音報數（含 20% 機率「six～seven～」67 迷因彩蛋）。
 
 ## 與 T-152 的差異
 | 項目 | 數字獵人 (T-152) | 67 獵人 (T-161) |
@@ -34,7 +34,7 @@
 - `index.html`：遊戲本體（單檔）。
 - `icon.svg` / `icon-180.png` / `app-icons/hunter67-*.png`：App icon（codex 產出 SVG，cairosvg 轉 PNG；`hunter67-appstore-1024.png` 為不透明 RGB 供 App Store）。
 - `backend/Code.gs` + `backend/DEPLOY.md`：雲端排行榜後端與部署說明。
-- `bgm.mp3`：背景音樂（Kevin MacLeod「Monkeys Spinning Monkeys」，CC BY 4.0）。
+- `bgm.mp3`：背景音樂（HydroGene「8-bit Epic Space Shooter Music」，OpenGameArt，CC0）。
 
 ## 驗證（2026-06-15）
 - 抽出 inline script `node --check` 通過。

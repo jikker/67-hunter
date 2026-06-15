@@ -800,7 +800,7 @@
 </style>
 </head>
 <body>
-  <audio id="bgm" src="bgm.wav" loop preload="auto"></audio>
+  <audio id="bgm" src="bgm.mp3?v6" loop preload="auto"></audio>
 <svg class="icon-sprite" width="0" height="0" aria-hidden="true" focusable="false">
   <symbol id="icon-target" viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="8.5"></circle><circle cx="12" cy="12" r="3.2"></circle>
@@ -915,8 +915,6 @@
   <button id="startBtn"><svg class="ui-icon"><use href="#icon-target"></use></svg><span class="btn-label">開始遊戲</span></button>
   <div class="cta-hint">找出指定數字，把格子全部塗滿色！（可捏合放大）</div>
 </div>
-<audio id="bgm" src="bgm.mp3?v50" loop preload="auto"></audio>
-
 <script>
 'use strict';
 /*
@@ -930,9 +928,10 @@
  * 67-v2：同步排行榜優化——開場 ?mode=all 一次抓四難度榜＋2 分快取；結算前先用門檻判斷，明確沒進榜就不打 POST、不再顯示「已上傳」。
  * 67-v3：前端版號重新計算、與 T-152 lineage 切割——改寫本 changelog 為 67 獵人自身版本史，
  *        移除沿用自數字獵人的 v1–v58 紀錄與散落於樣式區的 v44/v45 inline 標號（版號自此只跟 67 獵人自身改動走）。
+ * 67-v6：背景音樂改用 HydroGene「8-bit Epic Space Shooter Music」（OpenGameArt, CC0），清除舊重複 audio 標籤。
  */
 
-const APP_VERSION = 'v5';  // 67 獵人自身版本（與 T-152 各自計算）；v5：同步 T-152 (v62~v66) 的 safe-area 與原生 App 廣告串接功能
+const APP_VERSION = 'v6';  // 67 獵人自身版本；v6：背景音樂改用 OpenGameArt CC0 8-bit arcade loop
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -1034,9 +1033,9 @@ const I18N = {
     about4: '67 可能藏在很小的格子裡，字太小就兩指放大找；切到背景會自動暫停。',
     about5: '字太小可兩指捏合放大，放大後單指拖移棋盤。',
     about6: '右上選單可查看玩法說明與音樂版權。',
-    musicCredit: '背景音樂：自製 8-bit 無版權 BGM',
+    musicCredit: '背景音樂：HydroGene「8-bit Epic Space Shooter Music」（OpenGameArt，CC0）',
     officialMusic: '官方音樂頁',
-    ccLicense: 'Creative Commons Attribution 4.0',
+    ccLicense: 'Creative Commons CC0',
     privacyPolicy: '隱私權政策',
     adConsent: '管理廣告同意',
     version: '版本 {version}',
@@ -1139,9 +1138,9 @@ const I18N = {
     about4: '67 may hide in a tiny cell — pinch to zoom if the text is small. Switching away pauses the game.',
     about5: 'Pinch to zoom when numbers are small, then drag the board with one finger.',
     about6: 'Use the top menu to view instructions and music credits.',
-    musicCredit: 'Music: Custom 8-bit Royalty-Free BGM',
+    musicCredit: 'Music: “8-bit Epic Space Shooter Music” by HydroGene (OpenGameArt, CC0)',
     officialMusic: 'Official music page',
-    ccLicense: 'Creative Commons Attribution 4.0',
+    ccLicense: 'Creative Commons CC0',
     privacyPolicy: 'Privacy Policy',
     adConsent: 'Manage ad consent',
     version: 'Version {version}',
@@ -1972,15 +1971,14 @@ function installBoardTap() {
 }
 
 // ================= 背景音樂（遊戲中循環播放） =================
-// 「Monkeys Spinning Monkeys」Kevin MacLeod (incompetech.com)
-// Licensed under Creative Commons: By Attribution 4.0 — https://creativecommons.org/licenses/by/4.0/
+// 「8-bit Epic Space Shooter Music」by HydroGene (OpenGameArt), CC0.
 const Music = {
   enabled: localStorage.getItem('hunter67_music') !== 'off',
   ok: true, el: null,
   init() {
     this.el = document.getElementById('bgm');
     this.el.volume = 0.35;
-    this.el.addEventListener('error', () => {   // bgm.wav 不在 → 隱藏按鈕、不影響遊戲
+    this.el.addEventListener('error', () => {   // bgm.mp3 不在 → 隱藏按鈕、不影響遊戲
       this.ok = false;
       document.getElementById('musicBtn').hidden = true;
       document.getElementById('hudMusicBtn').hidden = true;
@@ -2774,8 +2772,8 @@ function showAbout(origin) {
     '</div>' +
     mediaStateHtml() +
     '<div class="credit">' + t('musicCredit') + '<br>' +
-    '<a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1400011" target="_blank" rel="noopener">' + t('officialMusic') + '</a> · ' +
-    '<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">' + t('ccLicense') + '</a></div>' +
+    '<a href="https://opengameart.org/content/8-bit-epic-space-shooter-music" target="_blank" rel="noopener">' + t('officialMusic') + '</a> · ' +
+    '<a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">' + t('ccLicense') + '</a></div>' +
     '<div class="credit"><a href="https://jikker.github.io/legal/number-hunter/privacy.html" target="_blank" rel="noopener">' + t('privacyPolicy') + '</a>' +
     (isInApp() ? ' · <a href="#" onclick="manageAdConsent();return false;">' + t('adConsent') + '</a>' : '') +
     '</div>' +
