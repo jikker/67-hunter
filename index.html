@@ -167,16 +167,6 @@
     overflow: hidden;
     text-overflow: clip;
   }
-  .hud .stat.progress-pulse {
-    color: #fef08a;
-    text-shadow: 0 0 12px rgba(250, 204, 21, .65);
-    animation: progressPulse .46s ease-out;
-  }
-  @keyframes progressPulse {
-    0% { transform: scale(1); }
-    42% { transform: scale(1.16); }
-    100% { transform: scale(1); }
-  }
   .hud .lives { color: #f87171; letter-spacing: 1px; font-size: 17px; overflow: visible; }
   .hud button {
     font-size: 13px; padding: 5px 12px; border: none; border-radius: 6px;
@@ -950,9 +940,10 @@
  * 67-v10：每局改為多個 67 目標（25/50/75/100 格＝3/6/9/12 個），HUD 顯示剩餘數，找到的 67 以高對比黃底紅框保留。
  * 67-v11：移除 67「six seven」語音彩蛋，報數改為播報目前還剩幾個 67。
  * 67-v12：命中 67 後不再跳成功 toast 或語音播報，改用 HUD 剩餘數的低干擾脈衝提示。
+ * 67-v13：命中 67 後完全不顯示提示（不 toast、不 HUD 脈衝、不播報），只有點錯才顯示錯誤提示。
  */
 
-const APP_VERSION = 'v12';  // 67 獵人自身版本；v12：命中後以 HUD 脈衝取代成功 toast / 語音報數
+const APP_VERSION = 'v13';  // 67 獵人自身版本；v13：命中後不顯示提示，只有點錯才 toast
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -992,8 +983,8 @@ const I18N = {
     musicOff: '背景音樂關閉',
     soundOn: '音效開啟',
     soundOff: '音效關閉',
-    speakOn: '進度提示開啟',
-    speakOnDesc: '進度提示開啟（命中後閃一下剩餘數）',
+    speakOn: '命中提示已關閉',
+    speakOnDesc: '命中 67 後不顯示提示；只有點錯才提示',
     speakOff: '進度提示關閉',
     on: '開',
     off: '關',
@@ -1101,8 +1092,8 @@ const I18N = {
     musicOff: 'Background music off',
     soundOn: 'Sound effects on',
     soundOff: 'Sound effects off',
-    speakOn: 'Progress cue on',
-    speakOnDesc: 'Progress cue on',
+    speakOn: 'Hit cue disabled',
+    speakOnDesc: 'Correct hits stay quiet; only wrong taps show a cue',
     speakOff: 'Progress cue off',
     on: 'On',
     off: 'Off',
@@ -2318,33 +2309,23 @@ const Sound = {
   }
 };
 
-// ================= 進度提示（低干擾 HUD 脈衝） =================
-// 成功命中時只讓 HUD 的剩餘數短暫脈衝，不跳 toast、不朗讀，避免遮住遊戲區域。
+// ================= 命中提示（關閉） =================
+// v13：命中 67 後保持安靜，只更新格子狀態與剩餘數；錯點才顯示 toast。
 const Speech = {
-  enabled: localStorage.getItem('hunter67_progress_cue') !== 'off',
-  ok: true,
+  enabled: false,
+  ok: false,
   init() {
+    for (const id of ['speakBtn', 'hudSpeakBtn']) {
+      const b = document.getElementById(id);
+      if (b) b.hidden = true;
+    }
     this.refresh();
   },
   pickVoice() {},
   sayText() {},
-  sayRemaining(remain, total) {
-    this.flashProgress();
-  },
-  flashProgress() {
-    if (!this.enabled) return;
-    const prog = document.getElementById('progDisp');
-    if (!prog) return;
-    prog.classList.remove('progress-pulse');
-    void prog.offsetWidth;
-    prog.classList.add('progress-pulse');
-  },
-  toggle() {
-    this.enabled = !this.enabled;
-    localStorage.setItem('hunter67_progress_cue', this.enabled ? 'on' : 'off');
-    this.refresh();
-    if (this.enabled && Game.active && Game.target) this.flashProgress();
-  },
+  sayRemaining() {},
+  flashProgress() {},
+  toggle() {},
   refresh() {
     for (const id of ['speakBtn', 'hudSpeakBtn']) {
       const b = document.getElementById(id);
