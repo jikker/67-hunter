@@ -447,7 +447,7 @@
   .cta button:hover { background: #34d399; }
   .cta .cta-hint { font-size: 12.5px; color: #f3f4f6; text-shadow: 0 1px 4px #000; }
   body.gaming .cta { display: none; }
-  body.gaming > .langbtn { display: none; }
+  body.gaming > .langbtn { display: inline-flex; }
   /* ---- 暫停模式：時間停止、棋盤霧化隱藏（HUD/計時仍清晰） ---- */
   .pause-screen {
     position: fixed; inset: 0; z-index: 4;   /* 蓋住棋盤(z:auto)、在 HUD(z:5)/topbar(z:10) 之下 */
@@ -688,7 +688,12 @@
     display: inline-flex;
   }
   body.gaming.landscape-play > .langbtn {
-    display: none;
+    display: inline-flex;
+    top: calc(8px + env(safe-area-inset-top));
+    right: calc(8px + env(safe-area-inset-right));
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
   }
   body.gaming.landscape-play .hud button {
     width: 100%;
@@ -961,9 +966,10 @@
  * 67-v13：命中 67 後完全不顯示提示（不 toast、不 HUD 脈衝、不播報），只有點錯才顯示錯誤提示。
  * 67-v14：手機 HUD 改為不溢出的緊湊配置；命中 67 一律用英文播報「six seven」。
  * 67-v15：命中語音改為非同步節流，不再每次連點都同步 cancel/speak，避免快速連點時主執行緒短暫卡住。
+ * 67-v16：遊戲開始後保留語言切換鈕，避免進入 gaming/landscape-play 狀態時被 CSS 隱藏。
  */
 
-const APP_VERSION = 'v15';  // 67 獵人自身版本；v15：命中語音非同步節流，修正快速連點卡頓
+const APP_VERSION = 'v16';  // 67 獵人自身版本；v16：遊戲中保留語言切換鈕
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。

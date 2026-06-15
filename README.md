@@ -15,6 +15,7 @@
 - **v13（2026-06-15）**：命中 67 後連 HUD 脈衝也取消，完全不顯示提示；只有點錯才顯示錯誤提示。
 - **v14（2026-06-15）**：手機 HUD 改為緊湊不溢出；命中 67 改播英文 `six seven`。
 - **v15（2026-06-15）**：命中語音改為非同步節流，不再每次連點都同步 `cancel/speak`，修正快速連點時短暫卡住。
+- **v16（2026-06-15）**：遊戲開始後保留語言切換鈕，避免進入遊戲/橫向棋盤狀態時被 CSS 隱藏。
 - 67 可能藏在很小的格子裡，**兩指捏合放大 / 滑鼠滾輪縮放**找；切到背景自動暫停。
 - 中英雙語、背景音樂（OpenGameArt CC0）、音效；命中只保留格子狀態與節流語音，點錯才跳提示。
 
@@ -44,6 +45,7 @@
 
 ## 驗證（2026-06-15）
 - 抽出 inline script `node --check` 通過。
+- v16：遊戲中語言切換鈕不再被 `body.gaming` / `landscape-play` 樣式隱藏。
 - v15：公開 repo commit `e207687`，Pages `https://jikker.github.io/67-hunter/` 已驗回 `APP_VERSION = 'v15'`，且線上檔案無 `speechSynthesis.cancel`。
 - v13：靜態行為檢查通過（命中分支無 `showToast`、無 `progress-pulse`、無 Web Speech；錯點分支仍有 `wrongTap` toast；進度提示按鈕隱藏）。
 - v12：成功命中不再顯示 toast、不使用 Web Speech；剩餘數改由 HUD 脈衝提示。
