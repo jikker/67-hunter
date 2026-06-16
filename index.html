@@ -966,7 +966,7 @@
  * 67-v16：遊戲開始後保留語言切換鈕，避免進入 gaming/landscape-play 狀態時被 CSS 隱藏。
  */
 
-const APP_VERSION = 'v20';  // 67 獵人自身版本；v20：手機修正——縮放鈕被 @media 壓回底部擋住 HUD 目標，改抬高到 HUD 之上 safe-area+70px。v19：直式 HUD 由頂部移到畫面底部（position:fixed bottom），避免遮住遊戲區；盤面本有 100px 下邊距、縮放鈕抬高 bottom:78px 避免被蓋；橫式左側欄不變。v18：各難度 67 數量改固定 5/10/15/20（新手/簡單/普通/困難）。v17：語言鈕改回 T-152 浮動做法（直式浮動右上、橫式收進HUD），不再與放棄鈕同列/擋放棄。
+const APP_VERSION = 'v21';  // 67 獵人自身版本；v21：修「點錯提示框不見」——提示框原在 HUD 下方，HUD 移底部後被推出畫面外，改到 HUD 上方。v20：手機修正——縮放鈕被 @media 壓回底部擋住 HUD 目標，改抬高到 HUD 之上 safe-area+70px。v19：直式 HUD 由頂部移到畫面底部（position:fixed bottom），避免遮住遊戲區；盤面本有 100px 下邊距、縮放鈕抬高 bottom:78px 避免被蓋；橫式左側欄不變。v18：各難度 67 數量改固定 5/10/15/20（新手/簡單/普通/困難）。v17：語言鈕改回 T-152 浮動做法（直式浮動右上、橫式收進HUD），不再與放棄鈕同列/擋放棄。
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
@@ -2404,11 +2404,12 @@ function showToast(msg, kind) {
   t.textContent = msg; t.hidden = false;
   const hud = document.getElementById('hud');
   if (isLandscapePlay()) {
-    t.style.top = '8px';              // 橫屏 HUD 是左側滿高欄，提示固定在棋盤區上方
-  } else if (hud && !hud.hidden) {     // 遊戲中：壓到 HUD 下方，避免蓋住計時/愛心/進度
-    t.style.top = (hud.getBoundingClientRect().bottom + 8) + 'px';
+    t.style.top = '8px'; t.style.bottom = 'auto';   // 橫屏 HUD 是左側滿高欄，提示固定在棋盤區上方
+  } else if (hud && !hud.hidden) {     // 遊戲中：HUD 已移到畫面底部 → 提示放到 HUD 上方（原本放下方會跑出畫面外）
+    t.style.top = 'auto';
+    t.style.bottom = (window.innerHeight - hud.getBoundingClientRect().top + 8) + 'px';
   } else {
-    t.style.top = '';                 // 非遊戲：回到 CSS 預設 64px
+    t.style.top = ''; t.style.bottom = '';          // 非遊戲：回到 CSS 預設 64px
   }
   clearTimeout(toastTimer);
   toastTimer = setTimeout(hideToast, 2600);
