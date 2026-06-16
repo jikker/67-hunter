@@ -598,7 +598,7 @@
     body.gaming .zoomctl {
       left: 8px;
       right: auto;
-      bottom: calc(env(safe-area-inset-bottom) + 8px);
+      bottom: calc(env(safe-area-inset-bottom) + 70px);   /* 抬到底部 HUD 之上，避免縮放鈕擋住目標數字 */
       flex-direction: row;
       gap: 6px;
     }
@@ -966,7 +966,7 @@
  * 67-v16：遊戲開始後保留語言切換鈕，避免進入 gaming/landscape-play 狀態時被 CSS 隱藏。
  */
 
-const APP_VERSION = 'v19';  // 67 獵人自身版本；v19：直式 HUD 由頂部移到畫面底部（position:fixed bottom），避免遮住遊戲區；盤面本有 100px 下邊距、縮放鈕抬高 bottom:78px 避免被蓋；橫式左側欄不變。v18：各難度 67 數量改固定 5/10/15/20（新手/簡單/普通/困難）。v17：語言鈕改回 T-152 浮動做法（直式浮動右上、橫式收進HUD），不再與放棄鈕同列/擋放棄。
+const APP_VERSION = 'v20';  // 67 獵人自身版本；v20：手機修正——縮放鈕被 @media 壓回底部擋住 HUD 目標，改抬高到 HUD 之上 safe-area+70px。v19：直式 HUD 由頂部移到畫面底部（position:fixed bottom），避免遮住遊戲區；盤面本有 100px 下邊距、縮放鈕抬高 bottom:78px 避免被蓋；橫式左側欄不變。v18：各難度 67 數量改固定 5/10/15/20（新手/簡單/普通/困難）。v17：語言鈕改回 T-152 浮動做法（直式浮動右上、橫式收進HUD），不再與放棄鈕同列/擋放棄。
 const W = 210, H = 297;     // A4 mm
 // 總格數（圓形 + 多邊形）：新手 25 格(1-25)、簡單 50 格(1-50)、普通 75 格(1-75)、困難 100 格(1-100)。
 // 新手/簡單模式格子更大更好點，手機族群尤其受用；難度記在 localStorage，重進沿用。
